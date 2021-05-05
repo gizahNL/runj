@@ -81,7 +81,7 @@ func execCommand() *cobra.Command {
 		// Setup and start the "runj-entrypoint" helper program in order to
 		// get the container STDIO hooked up properly.
 		var entrypoint *exec.Cmd
-		entrypoint, err = jail.SetupEntrypoint(id, false, process.Args, process.Env, "")
+		entrypoint, err = jail.SetupEntrypoint(id, false, process.Cwd, process.Args, process.Env, "")
 		if err != nil {
 			return err
 		}

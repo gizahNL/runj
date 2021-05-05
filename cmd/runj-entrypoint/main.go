@@ -60,7 +60,7 @@ func _main() (int, error) {
 	}
 	jid := os.Args[1]
 	fifoPath := os.Args[2]
-	argv := os.Args[3:]
+	argv := os.Args[4:]
 
 	if err := setupConsole(); err != nil {
 		return 2, err

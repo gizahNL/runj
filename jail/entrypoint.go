@@ -38,7 +38,7 @@ const (
 // as soon as STDIO is configured.
 //
 // Note: this API is unstable; expect it to change.
-func SetupEntrypoint(id string, init bool, argv []string, env []string, consoleSocketPath string) (*exec.Cmd, error) {
+func SetupEntrypoint(id string, init bool, cwd string, argv []string, env []string, consoleSocketPath string) (*exec.Cmd, error) {
 	path := execSkipFifo
 	if init {
 		var err error
@@ -47,7 +47,7 @@ func SetupEntrypoint(id string, init bool, argv []string, env []string, consoleS
 			return nil, err
 		}
 	}
-	args := append([]string{id, path}, argv...)
+	args := append([]string{id, path, cwd}, argv...)
 	cmd := exec.Command("runj-entrypoint", args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
