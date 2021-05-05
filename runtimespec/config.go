@@ -32,11 +32,11 @@ type Spec struct {
 	// Modification by Samuel Karp
 	/*
 		// Hostname configures the container's hostname.
-		Hostname string `json:"hostname,omitempty"`
-		// Mounts configures additional mounts (on top of Root).
-		Mounts []Mount `json:"mounts,omitempty"`
-		// Hooks configures callbacks for container lifecycle events.
-		Hooks *Hooks `json:"hooks,omitempty" platform:"linux,solaris"`
+		Hostname string `json:"hostname,omitempty"`*/
+	// Mounts configures additional mounts (on top of Root).
+	Mounts []Mount `json:"mounts,omitempty"`
+	// Hooks configures callbacks for container lifecycle events.
+	Hooks *Hooks `json:"hooks,omitempty" platform:"linux,solaris"`/*
 		// Annotations contains arbitrary metadata for the container.
 		Annotations map[string]string `json:"annotations,omitempty"`
 
@@ -86,11 +86,11 @@ type Process struct {
 	// Env populates the process environment for the process.
 	Env []string `json:"env,omitempty"`
 
+	// Cwd is the current working directory for the process and must be
+	// relative to the container's root.
+	Cwd string `json:"cwd"`
 	// Modification by Samuel Karp`
 	/*
-		// Cwd is the current working directory for the process and must be
-		// relative to the container's root.
-		Cwd string `json:"cwd"`
 		// Capabilities are Linux capabilities that are kept for the process.
 		Capabilities *LinuxCapabilities `json:"capabilities,omitempty" platform:"linux"`
 		// Rlimits specifies rlimit options to apply to the process.
@@ -107,6 +107,18 @@ type Process struct {
 	// End of modification
 }
 
+// Mount specifies a mount for a container.
+type Mount struct {
+	// Destination is the absolute path where the mount will be placed in the container.
+	Destination string `json:"destination"`
+	// Type specifies the mount kind.
+	Type string `json:"type,omitempty" platform:"linux,solaris"`
+	// Source specifies the source path of the mount.
+	Source string `json:"source,omitempty"`
+	// Options are fstab style mount options.
+	Options []string `json:"options,omitempty"`
+}
+
 // Root contains information about the container's root filesystem on the host.
 type Root struct {
 	// Path is the absolute path to the container's root filesystem.
@@ -118,6 +130,37 @@ type Root struct {
 		Readonly bool `json:"readonly,omitempty"`
 	*/
 	// End of modification
+}
+
+// Hook specifies a command that is run at a particular event in the lifecycle of a container
+type Hook struct {
+	Path    string   `json:"path"`
+	Args    []string `json:"args,omitempty"`
+	Env     []string `json:"env,omitempty"`
+	Timeout *int     `json:"timeout,omitempty"`
+}
+
+// Hooks specifies a command that is run in the container at a particular event in the lifecycle of a container
+// Hooks for container setup and teardown
+type Hooks struct {
+	// Prestart is Deprecated. Prestart is a list of hooks to be run before the container process is executed.
+	// It is called in the Runtime Namespace
+	Prestart []Hook `json:"prestart,omitempty"`
+	// CreateRuntime is a list of hooks to be run after the container has been created but before pivot_root or any equivalent operation has been called
+	// It is called in the Runtime Namespace
+	CreateRuntime []Hook `json:"createRuntime,omitempty"`
+	// CreateContainer is a list of hooks to be run after the container has been created but before pivot_root or any equivalent operation has been called
+	// It is called in the Container Namespace
+	CreateContainer []Hook `json:"createContainer,omitempty"`
+	// StartContainer is a list of hooks to be run after the start operation is called but before the container process is started
+	// It is called in the Container Namespace
+	StartContainer []Hook `json:"startContainer,omitempty"`
+	// Poststart is a list of hooks to be run after the container process is started.
+	// It is called in the Runtime Namespace
+	Poststart []Hook `json:"poststart,omitempty"`
+	// Poststop is a list of hooks to be run after the container process exits.
+	// It is called in the Runtime Namespace
+	Poststop []Hook `json:"poststop,omitempty"`
 }
 
 // Modification by Samuel Karp
