@@ -126,7 +126,7 @@ the console's pseudoterminal`)
 			return errors.New("console-socket provided but Process.Terminal is false")
 		}
 		var confPath string
-		confPath, err = jail.CreateConfig(id, rootPath)
+		confPath, err = jail.CreateConfig(id, rootPath, ociConfig.Mounts)
 		if err != nil {
 			return err
 		}
@@ -134,10 +134,24 @@ the console's pseudoterminal`)
 			return err
 		}
 
+		for _, hook:= range ociConfig.Hooks.CreateRuntime {
+			if err := exec.Command(hook.Path, hook.Args ...).Run(); err != nil {
+				return fmt.Errorf("failed executing createruntime hook: %+v", hook)
+			}
+		}
+
+		for _, hook := range ociConfig.Hooks.CreateContainer {
+			args := []string{ id, hook.Path,}
+			args = append(args, hook.Args ...)
+			if err := exec.Command("/usr/sbin/jexec", args ...).Run(); err != nil {
+				return fmt.Errorf("failed executing createcontainer hook: %+v", hook)
+			}
+		}
+
 		// Setup and start the "runj-entrypoint" helper program in order to
 		// get the container STDIO hooked up properly.
 		var entrypoint *exec.Cmd
-		entrypoint, err = jail.SetupEntrypoint(id, true, ociConfig.Process.Args, ociConfig.Process.Env, *consoleSocket)
+		entrypoint, err = jail.SetupEntrypoint(id, true, ociConfig.Process.Cwd, ociConfig.Process.Args, ociConfig.Process.Env, *consoleSocket)
 		if err != nil {
 			return err
 		}
