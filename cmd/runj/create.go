@@ -134,17 +134,20 @@ the console's pseudoterminal`)
 			return err
 		}
 
-		for _, hook:= range ociConfig.Hooks.CreateRuntime {
-			if err := exec.Command(hook.Path, hook.Args ...).Run(); err != nil {
-				return fmt.Errorf("failed executing createruntime hook: %+v", hook)
+		if ociConfig.Hooks != nil && ociConfig.Hooks.CreateRuntime != nil {
+			for _, hook:= range ociConfig.Hooks.CreateRuntime {
+				if err := exec.Command(hook.Path, hook.Args ...).Run(); err != nil {
+					return fmt.Errorf("failed executing createruntime hook: %+v", hook)
+				}
 			}
 		}
-
-		for _, hook := range ociConfig.Hooks.CreateContainer {
-			args := []string{ id, hook.Path,}
-			args = append(args, hook.Args ...)
-			if err := exec.Command("/usr/sbin/jexec", args ...).Run(); err != nil {
-				return fmt.Errorf("failed executing createcontainer hook: %+v", hook)
+		if ociConfig.Hooks != nil && ociConfig.Hooks.CreateRuntime != nil {
+			for _, hook := range ociConfig.Hooks.CreateContainer {
+				args := []string{ id, hook.Path,}
+				args = append(args, hook.Args ...)
+				if err := exec.Command("/usr/sbin/jexec", args ...).Run(); err != nil {
+					return fmt.Errorf("failed executing createcontainer hook: %+v", hook)
+				}
 			}
 		}
 
