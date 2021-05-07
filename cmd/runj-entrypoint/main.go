@@ -31,6 +31,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"syscall"
 
 	"github.com/containerd/console"
 	"golang.org/x/sys/unix"
@@ -120,6 +121,14 @@ func dupStdio(slavePath string) error {
 			Path: slavePath,
 			Err:  err,
 		}
+	}
+
+	if _, err := syscall.Setsid(); err != nil {
+		return err
+	}
+
+	if ret, _, err := unix.Syscall(unix.SYS_IOCTL, uintptr(fd), unix.TIOCSCTTY, uintptr(0)); ret != 0 || err != 0 {
+		return fmt.Errorf("Unable to set controlling tty")
 	}
 	for _, i := range []int{0, 1, 2} {
 		if err := unix.Dup2(fd, i); err != nil {
