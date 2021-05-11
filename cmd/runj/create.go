@@ -133,6 +133,11 @@ the console's pseudoterminal`)
 		if err := jail.CreateJail(cmd.Context(), confPath); err != nil {
 			return err
 		}
+		defer func() {
+			if err != nil {
+				jail.DestroyJail(cmd.Context(), confPath, id)
+			}
+		}()
 
 		if ociConfig.Hooks != nil && ociConfig.Hooks.CreateRuntime != nil {
 			for _, hook:= range ociConfig.Hooks.CreateRuntime {
