@@ -44,22 +44,38 @@ func execCreate(ctx context.Context, id, bundle string, stdin io.Reader, stdout 
 	ec, err := reaper.Default.Start(cmd)
 
 	var con console.Console
+	var cwg sync.WaitGroup
+	var socketError error
 	if socket != nil {
-		con, err = socket.ReceiveMaster()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to retrieve console master")
-		}
-		log.G(ctx).WithField("id", id).Warn("Received console master!")
-		err = copyConsole(ctx, con, stdin, stdout, stderr)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to start console copy")
-		}
-		log.G(ctx).WithField("id", id).Warn("Copying console!")
+		cwg.Add(1)
+		go func() {
+			defer cwg.Done()
+			con, err = socket.ReceiveMaster()
+			if err != nil {
+				socketError = errors.Wrap(err, "failed to retrieve console master")
+				return
+			}
+			log.G(ctx).WithField("id", id).Warn("Received console master!")
+			err = copyConsole(ctx, con, stdin, stdout, stderr)
+			if err != nil {
+				socketError = errors.Wrap(err, "failed to start console copy")
+				return
+			}
+			log.G(ctx).WithField("id", id).Warn("Copying console!")
+		}()
 	}
-
-	_, err = WaitNoFlush(cmd, ec)
-	if err != nil {
+	var ret int
+	ret, err = WaitNoFlush(cmd, ec)
+	if err != nil || ret != 0 {
 		log.G(ctx).WithError(err).WithField("id", id).Error("runj create failed")
+		if err == nil {
+			err = errors.New("Created returned nonzero")
+		}
+		return nil, err
+	}
+	cwg.Wait()
+	if socketError != nil {
+		return nil, socketError
 	}
 	return con, err
 }
