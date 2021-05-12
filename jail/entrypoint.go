@@ -47,11 +47,12 @@ func SetupEntrypoint(id string, init bool, cwd string, argv []string, env []stri
 			return nil, err
 		}
 	}
-	args := append([]string{id, path, cwd}, argv...)
+	args := append([]string{id, path}, argv...)
 	cmd := exec.Command("runj-entrypoint", args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	env = append(env, "_RUNJENTRYPOINTCWD="+cwd)
 	cmd.Env = env
 
 	// the caller of runj will handle receiving the console master

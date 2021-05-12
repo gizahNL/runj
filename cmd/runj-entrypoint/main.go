@@ -26,12 +26,21 @@ kill`.
 */
 package main
 
+// #cgo LDFLAGS: -ljail
+// #include <stdlib.h>
+// #include <sys/param.h>
+// #include <sys/jail.h>
+// #include <jail.h>
+import "C"
+
 import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"syscall"
+	"unsafe"
 
 	"github.com/containerd/console"
 	"golang.org/x/sys/unix"
@@ -61,6 +70,7 @@ func _main() (int, error) {
 	}
 	jid := os.Args[1]
 	fifoPath := os.Args[2]
+	command := os.Args[3]
 	argv := os.Args[4:]
 
 	if err := setupConsole(); err != nil {
@@ -78,8 +88,26 @@ func _main() (int, error) {
 		}
 	}
 
+	cJailName := C.CString(jid)
+	cJailID := C.jail_getid(cJailName)
+	C.free(unsafe.Pointer(cJailName))//deferring this would mean it never gets executed after execve!
+	C.jail_attach(cJailID)
+	cwd := os.Getenv("_RUNJENTRYPOINTCWD")
+	os.Unsetenv("_RUNJENTRYPOINTCWD")
+	if cwd == "" {
+		cwd = "/"
+	}
+	err := os.Chdir(cwd)
+	if err != nil {
+		return 5, fmt.Errorf("could not change into: %s, %w", err)
+	}
+
+	cmdpath, err := exec.LookPath(command)
+	if err != nil {
+		return 6, fmt.Errorf("Could not find start command %w", err)
+	}
 	// call unix.Exec (which is execve(2)) to replace this process with the jexec
-	if err := unix.Exec(jexecPath, append([]string{"jexec", jid}, argv...), unix.Environ()); err != nil {
+	if err := unix.Exec(cmdpath, append([]string{command}, argv...), unix.Environ()); err != nil {
 		return 6, fmt.Errorf("failed to exec: %w", err)
 	}
 	return 0, nil
