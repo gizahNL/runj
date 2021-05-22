@@ -21,7 +21,6 @@ const (
   sysvshm = new;
 
   path = "{{ .Root }}";
-  mount.fstab = "{{ .Fstab }}";
   vnet;
   persist;
 }

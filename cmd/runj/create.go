@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,6 +10,10 @@ import (
 	"go.sbk.wtf/runj/oci"
 	"go.sbk.wtf/runj/runtimespec"
 	"go.sbk.wtf/runj/state"
+        "github.com/containerd/containerd/mount"
+        "github.com/pkg/errors"
+
+
 
 	"github.com/spf13/cobra"
 )
@@ -110,6 +113,31 @@ the console's pseudoterminal`)
 				rootPath = filepath.Join(bundle, rootPath)
 			}
 		}
+		// setup mounts
+		if ociConfig.Mounts != nil {
+			for _, sm := range ociConfig.Mounts {
+				m := &mount.Mount{
+					Type: sm.Type,
+					Source: sm.Source,
+					Options: sm.Options,
+				}
+				if sm.Destination == "/dev" {
+					m.Options = append(m.Options, "ruleset=5")
+				}
+				target := filepath.Join(rootPath, sm.Destination)
+				if err := m.Mount(target); err != nil {
+					return errors.Wrapf(err, "failed to mount %v", m)
+				}
+				//unmount on create failure
+				defer func() {
+					if err != nil {
+						mount.UnmountAll(target, 0)
+					}
+				}()
+			}
+		}
+
+
 		// console socket validation
 		if ociConfig.Process.Terminal {
 			if *consoleSocket == "" {

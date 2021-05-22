@@ -4,8 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+        "path/filepath"
 
 	"go.sbk.wtf/runj/state"
+
+	"go.sbk.wtf/runj/oci"
+	"go.sbk.wtf/runj/runtimespec"
+        "github.com/containerd/containerd/mount"
 
 	"go.sbk.wtf/runj/jail"
 
@@ -50,6 +55,40 @@ func deleteCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			runjstate, err := state.Load(id)
+			if err != nil {
+				return err
+			}
+			bundle := runjstate.Bundle
+	                var ociConfig *runtimespec.Spec
+	                ociConfig, err = oci.LoadConfig(id)
+	                if err != nil {
+		                return err
+	                }
+	                rootPath := filepath.Join(bundle, "root")
+	                if ociConfig != nil && ociConfig.Root != nil && ociConfig.Root.Path != "" {
+				rootPath = ociConfig.Root.Path
+	                        if rootPath[0] != filepath.Separator {
+		                        rootPath = filepath.Join(bundle, rootPath)
+	                        }
+	                }
+			var failedUnmount error
+			if ociConfig.Mounts != nil {
+				for _, sm := range ociConfig.Mounts {
+					target := filepath.Join(rootPath, sm.Destination)
+					if err := mount.UnmountAll(target, 0); err != nil {
+						fmt.Printf("failed to unmount %s: %+v\n", target, err)
+						failedUnmount = err
+					}
+				}
+			}
+			if failedUnmount != nil {
+				return failedUnmount
+			}
+
+
+
+
 			return state.Remove(id)
 		},
 	}
