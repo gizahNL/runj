@@ -9,6 +9,7 @@ require (
 	github.com/containerd/fifo v1.0.0
 	github.com/containerd/go-runc v1.0.0
 	github.com/containerd/typeurl v1.0.2
+	github.com/gizahNL/gojail v0.0.1 // indirect
 	github.com/gogo/protobuf v1.3.2
 	github.com/hashicorp/go-multierror v1.1.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0
@@ -18,6 +19,6 @@ require (
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/cobra v1.0.0
 	github.com/stretchr/testify v1.6.1
-	golang.org/x/sys v0.0.0-20210324051608-47abb6519492
+	golang.org/x/sys v0.0.0-20210510120138-977fb7262007
 	google.golang.org/grpc v1.34.0 // indirect
 )
