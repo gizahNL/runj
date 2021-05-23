@@ -29,14 +29,14 @@ type Spec struct {
 	// Root configures the container's root filesystem.
 	Root *Root `json:"root,omitempty"`
 
-	// Modification by Samuel Karp
-	/*
-		// Hostname configures the container's hostname.
-		Hostname string `json:"hostname,omitempty"`*/
+	// Hostname configures the container's hostname.
+	Hostname string `json:"hostname,omitempty"`
 	// Mounts configures additional mounts (on top of Root).
 	Mounts []Mount `json:"mounts,omitempty"`
 	// Hooks configures callbacks for container lifecycle events.
 	Hooks *Hooks `json:"hooks,omitempty" platform:"linux,solaris"`/*
+	// Modification by Samuel Karp
+	/*
 		// Annotations contains arbitrary metadata for the container.
 		Annotations map[string]string `json:"annotations,omitempty"`
 
@@ -50,6 +50,7 @@ type Spec struct {
 		VM *VM `json:"vm,omitempty" platform:"vm"`
 	*/
 	// End of modification
+	Freebsd *Freebsd `json:"freebsd,omitempty" platform:"freebsd"`
 }
 
 // Modification by Samuel Karp
@@ -161,6 +162,16 @@ type Hooks struct {
 	// Poststop is a list of hooks to be run after the container process exits.
 	// It is called in the Runtime Namespace
 	Poststop []Hook `json:"poststop,omitempty"`
+}
+
+// Freebsd contains information for containers running on Freebsd
+type Freebsd struct {
+        //JailOptions contains options passed to the jail hosting the container
+        JailOptions JailOptions `json:"jailOptions,omitempty"`
+}
+
+type JailOptions struct {
+        Parent string `json:"jailOptions,omitempty"`
 }
 
 // Modification by Samuel Karp

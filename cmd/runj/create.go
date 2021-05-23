@@ -5,14 +5,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-
 	"go.sbk.wtf/runj/jail"
 	"go.sbk.wtf/runj/oci"
 	"go.sbk.wtf/runj/runtimespec"
 	"go.sbk.wtf/runj/state"
         "github.com/containerd/containerd/mount"
         "github.com/pkg/errors"
-
+	"github.com/gizahNL/gojail"
 
 
 	"github.com/spf13/cobra"
@@ -153,19 +152,39 @@ the console's pseudoterminal`)
 		} else if *consoleSocket != "" {
 			return errors.New("console-socket provided but Process.Terminal is false")
 		}
-		var confPath string
-		confPath, err = jail.CreateConfig(id, rootPath, ociConfig.Mounts)
-		if err != nil {
-			return err
+		jailconfig := make(map[string]interface{})
+		jailconfig["name"] = id
+		jailconfig["path"] = rootPath
+		jailconfig["persist"] = true
+		jailconfig["allow.raw_sockets"] = true
+		jailconfig["host.hostname"] = ociConfig.Hostname
+		jailconfig["ip4"] = "inherit"
+		jailconfig["ip4.saddrsel"] = false
+		jailconfig["ip6"] = "inherit"
+		jailconfig["ip6.saddrsel"] = false
+
+		var Jail gojail.Jail
+		if ociConfig.Freebsd != nil && ociConfig.Freebsd.JailOptions.Parent != "" {
+			parent, err := gojail.JailGetByName(ociConfig.Freebsd.JailOptions.Parent)
+			if err != nil {
+				return err
+			}
+			Jail, err = parent.CreateChildJail(jailconfig)
+			if err != nil {
+				return err
+			}
+		} else {
+			Jail, err = gojail.JailCreate(jailconfig)
 		}
-		if err := jail.CreateJail(cmd.Context(), confPath); err != nil {
-			return err
+		if err != nil {
+			return fmt.Errorf("failed creating jail: %w", err)
 		}
 		defer func() {
 			if err != nil {
-				jail.DestroyJail(cmd.Context(), confPath, id)
+				Jail.Destroy()
 			}
 		}()
+		s.JID = int(Jail.ID())
 
 		if ociConfig.Hooks != nil && ociConfig.Hooks.CreateRuntime != nil {
 			for _, hook:= range ociConfig.Hooks.CreateRuntime {

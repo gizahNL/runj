@@ -40,7 +40,9 @@ import (
 	"os/exec"
 	"strconv"
 	"syscall"
-	"unsafe"
+
+	"go.sbk.wtf/runj/state"
+	"github.com/gizahNL/gojail"
 
 	"github.com/containerd/console"
 	"golang.org/x/sys/unix"
@@ -68,10 +70,17 @@ func _main() (int, error) {
 	if len(os.Args) < 4 {
 		return 1, usage
 	}
-	jid := os.Args[1]
+	id := os.Args[1]
 	fifoPath := os.Args[2]
 	command := os.Args[3]
 	argv := os.Args[4:]
+
+	s, err := state.Load(id)
+	if err != nil {
+		return 1, err
+	}
+
+	jid := gojail.JailID(s.JID)
 
 	if err := setupConsole(); err != nil {
 		return 2, err
@@ -88,16 +97,21 @@ func _main() (int, error) {
 		}
 	}
 
-	cJailName := C.CString(jid)
-	cJailID := C.jail_getid(cJailName)
-	C.free(unsafe.Pointer(cJailName))//deferring this would mean it never gets executed after execve!
-	C.jail_attach(cJailID)
+	jail, err := gojail.JailGetByID(jid)
+	if err != nil {
+		return 5, err
+	}
+	err = jail.Attach()
+	if err != nil {
+		return 6, err
+	}
+
 	cwd := os.Getenv("_RUNJENTRYPOINTCWD")
 	os.Unsetenv("_RUNJENTRYPOINTCWD")
 	if cwd == "" {
 		cwd = "/"
 	}
-	err := os.Chdir(cwd)
+	err = os.Chdir(cwd)
 	if err != nil {
 		return 5, fmt.Errorf("could not change into: %s, %w", err)
 	}
