@@ -152,6 +152,7 @@ func execState(ctx context.Context, id string) (*ociState, error) {
 func execDelete(ctx context.Context, id string) error {
 	cmd := exec.CommandContext(ctx, "runj", "delete", id)
 	b, err := combinedOutput(cmd)
+	log.G(ctx).WithError(err).WithField("output", string(b)).WithField("id", id).Error("runj delete failed")
 	if err != nil {
 		log.G(ctx).WithError(err).WithField("output", string(b)).WithField("id", id).Error("runj delete failed")
 		return err

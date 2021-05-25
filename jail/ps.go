@@ -14,7 +14,7 @@ import (
 // argument) is still active and by whether there are any processes present in
 // the jail.  This function is best-effort, racy, and subject to change.  It
 // currently depends on the host's "ps" command.
-func IsRunning(ctx context.Context, jail string, pid int) (bool, error) {
+func IsRunning(ctx context.Context, jid int, pid int) (bool, error) {
 	if pid > 0 {
 		if ok, err := psCmd(exec.CommandContext(ctx, "ps", "--libxo", "json", "-x", strconv.Itoa(pid))); err != nil {
 			return false, err
@@ -24,7 +24,7 @@ func IsRunning(ctx context.Context, jail string, pid int) (bool, error) {
 		}
 	}
 
-	if ok, err := psCmd(exec.CommandContext(ctx, "ps", "--libxo", "json", "-x", "-J", jail)); err != nil {
+	if ok, err := psCmd(exec.CommandContext(ctx, "ps", "--libxo", "json", "-x", "-J", strconv.Itoa(jid))); err != nil {
 		return false, err
 	} else {
 		return ok, nil

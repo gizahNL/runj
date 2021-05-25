@@ -66,7 +66,7 @@ func killCommand() *cobra.Command {
 			return err
 		}
 		if s.Status == state.StatusRunning {
-			if ok, err := jail.IsRunning(cmd.Context(), id, s.PID); err != nil {
+			if ok, err := jail.IsRunning(cmd.Context(), s.JID, s.PID); err != nil {
 				return err
 			} else if !ok {
 				s.Status = state.StatusStopped

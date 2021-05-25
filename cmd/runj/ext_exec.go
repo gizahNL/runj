@@ -59,7 +59,7 @@ the console's pseudoterminal`)
 		if s.Status != state.StatusRunning {
 			return errors.New("cannot exec non-running container")
 		}
-		if ok, err := jail.IsRunning(cmd.Context(), id, s.PID); !ok {
+		if ok, err := jail.IsRunning(cmd.Context(), s.JID, s.PID); !ok {
 			return errors.New("cannot exec non-running container")
 		} else if err != nil {
 			return err

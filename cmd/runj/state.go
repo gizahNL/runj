@@ -63,7 +63,7 @@ func stateCommand() *cobra.Command {
 				return err
 			}
 			if s.Status == state.StatusRunning {
-				ok, err := jail.IsRunning(cmd.Context(), id, s.PID)
+				ok, err := jail.IsRunning(cmd.Context(), s.JID, s.PID)
 				if err != nil {
 					return err
 				}
