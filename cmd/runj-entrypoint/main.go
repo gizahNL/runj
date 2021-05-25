@@ -26,13 +26,6 @@ kill`.
 */
 package main
 
-// #cgo LDFLAGS: -ljail
-// #include <stdlib.h>
-// #include <sys/param.h>
-// #include <sys/jail.h>
-// #include <jail.h>
-import "C"
-
 import (
 	"errors"
 	"fmt"
